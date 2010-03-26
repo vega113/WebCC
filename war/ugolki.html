@@ -1,0 +1,562 @@
+<html>
+<title>
+Ugolki
+</title>
+<link type="text/css" href="http://ugolki.appspot.com/js/themes/base/ui.all.css" rel="stylesheet" />
+<link type="text/css" href="http://ugolki.appspot.com/js/demos/demos.css" rel="stylesheet" />
+<head>
+<meta name="google-site-verification" content="S1EohK2T_LQj8-rer6KOH8Tc4VNy6sXnX36TIpL6fXk" />
+<h1><p align="center"> Hello! Welcome to the Free Online Ugolki Board Game!</p> </h1>
+</head>
+<body >
+
+<script type="text/javascript"src="http://code.jquery.com/jquery-1.4.2.js"></script> 
+<script type="text/javascript" src="http://ugolki.appspot.com/js/jquery.jqDock.js"></script>
+ <script type="text/javascript" src="http://ugolki.appspot.com/js/ui/effects.core.js"></script> 
+ <script type="text/javascript" src="http://ugolki.appspot.com/js/ui/effects.drop.js"></script> 
+
+
+<script type="text/javascript">
+
+var SIDE_RED = 'red';
+var SIDE_BLACK = 'black';
+var DEFAULT_BLACK_NAME = "Computer-Black";
+var DEFAULT_RED_NAME = "Computer-Red";
+var DEFAULT_BLACK_IMG = "http://ugolki.appspot.com/img/black_robot.jpeg";
+var DEFAULT_RED_IMG = "http://ugolki.appspot.com/img/red_robot.jpeg";
+var prefs = null;
+var debugMode = true;
+var defaultOwner = "unidentified";
+var lstate = new Array(0,0,0,0,0,0);
+
+/*
+ * Types of ugolki events:
+	 0)click on side button - red
+	 1)click on side button - black
+	 2)click on new game
+	 3)click on resign
+	 4)click on square
+	 5)game over
+ */
+
+
+
+	$(document).ready(function() {
+		try {
+			if (wave != null)
+				return;
+		} catch (e) {
+			mylog("Entering script! - document ready.");
+			mylog("lstate: " + obj2str(lstate));
+			commonInit();
+			//registerInit();
+			try {
+				prefs = new gadgets.Prefs();
+				//debugMode = prefs.getBool("debugMode") ? true : false;
+				mylog("debug mode: " + prefs.getBool("debugMode"));
+			} catch (e) {
+				mylog("blah" + e + "..");
+				debugMode = true;
+				ugolkiApp.recieveWaveId(defaultOwner);
+			}
+		}
+	
+	});
+
+	function commonInit(){
+		$("#redJoin").attr("disabled", false);
+		$("#blackJoin").attr("disabled", false);
+		updatePlayerIcon(SIDE_BLACK, DEFAULT_BLACK_NAME, DEFAULT_BLACK_IMG);
+		updatePlayerIcon(SIDE_RED, DEFAULT_RED_NAME, DEFAULT_RED_IMG);
+	}
+
+	function buttonClicked(side) {
+		mylog("entering button clicked: " + side);
+		var viewerId = "anon@" + side;
+		var viewerName = 'Anon ' + side;
+		try {
+			if (wave != null) {
+				var wstate = getWstate();
+				
+				viewerId = wave.getViewer().getId();
+				viewerName = wave.getViewer().getDisplayName();
+				viewerThumbnailUrl = wave.getViewer().getThumbnailUrl();
+				var arrData = viewerId + "$$" + viewerName + "$$"
+						+ viewerThumbnailUrl + "$$" + side;
+				
+				//need to signal applets that viewer now plays on "side"
+				mylog("in buttonClicked: " + wstate );
+				var obj = {};
+
+				var key = wstate[0] + "#sideClicked";
+				obj[key] = arrData;
+				
+				wstate[0]++;
+				var stateStr = obj2str(wstate);
+				obj["eventState"] = stateStr;
+				
+				wave.getState().submitDelta(obj);
+				//}
+
+				//need to signal applets that viewer now plays on "side"
+
+			} else {
+				mylog("wave is null: buttonClicked, ");
+				ugolkiApp.receivePlayerInfo(side, viewerName, viewerId);
+			}
+		} catch (e1) {
+			mylog(e1);
+			ugolkiApp.receivePlayerInfo(side, viewerName, viewerId);
+		}
+		mylog("exiting button clicked: " + side);
+	}
+
+	function updatePlayerIcon(side, viewerName, thumbNailUrl) {
+		mylog("updating icon; name: " + viewerName + ", url: " + thumbNailUrl);
+		$("#" + side + "Thumbnail").attr("src", thumbNailUrl);
+		$("#" + side + "Name").text(viewerName);
+
+	}
+
+	function createNewState() {
+		mylog("creating new state...");
+		return new Array(0, 0, 0, 0, 0, 0);
+	}
+
+	function obj2str(arr) {
+		return JSON.stringify(arr);
+	}
+
+	function str2obj(str) {
+		return JSON.parse(str);
+	}
+
+	function getWstate() {
+		var wstate = null;
+		try {
+
+			if (wave.getState().get("eventState") != null) {
+				wstate = str2obj(wave.getState().get("eventState"));
+			} else {
+				wstate = createNewState();
+				mylog("created wstate: " + wstate);
+				wave.getState().submitValue("eventState", obj2str(wstate));
+			}
+		} catch (e) {
+			wstate = createNewState();
+			mylog("getWstate() failed - no wave, " + e);
+		}
+		return wstate;
+	}
+
+	function setWstate(wstate) {
+		try {
+			wave.getState().submitValue("eventState", obj2str(wstate));
+		} catch (e) {
+			mylog("failed in setWstate: " + e);
+		}
+	}
+
+	function recieveGameOver(sourceId, looserId, winnerId) {
+		mylog("start: recieveGameOver");
+		try {
+			$("#redJoin").attr("disabled", false);
+			$("#blackJoin").attr("disabled", false);
+			if (wave != null) {
+				viewerId = wave.getViewer().getId();
+				var wstate = getWstate();
+				wstate[5]++;
+				var obj = {};
+				var stateStr = obj2str(wstate);
+				obj["eventState"] = stateStr;
+				var gameOverInfo = sourceId + "$$" + looserId + "$$" + winnerId;
+				obj["gameOverInfo"] = gameOverInfo;
+				wave.getState().submi
+				//need to signal applets that viewer now plays on "side"
+
+			} else {
+				mylog("wave is null: recieveGameOver");
+			}
+		} catch (e1) {
+			mylog(e1);
+		}
+	}
+
+	function mylog(str) {
+		if (debugMode == true) {
+			var newDate = new Date();
+			var strOld = "";
+			if ($("#debugDiv").html() != null)
+				strOld = $("#debugDiv").html();
+			$("#debugDiv").html(str + "<br>" + newDate.getTime() + " : " + strOld);
+			try {
+				wave.log(str);
+			} catch (e) {
+			}
+		}
+	}
+
+	function renderInfo() {
+		mylog("In render info");
+		if (window.firstTime == null || window.firstTime == true) {
+			mylog("First time in window - total reload");
+			//lstate = getWstate();
+			//totalReload();
+			//return;
+			try {
+				var ownerViewerId = wave.getViewer().getId();
+				ugolkiApp.recieveWaveId(ownerViewerId);//let applet know who owns it
+				window.firstTime = false;
+			} catch (e) {
+				mylog(e);
+			}
+
+		}
+		try {
+			var wstate = null;
+			if (wave.getState() != null) {
+				wstate = getWstate();
+				mylog("wstate: " + wstate);
+				mylog("lstate: " + lstate);
+				var isChangeDetected = true;
+				var isFuncSucceeded = false;
+				var counter = 0;
+				while (isChangeDetected) {
+					mylog("counter: " + counter);
+					counter++;
+					isChangeDetected = false;
+
+					if (wstate[0] > lstate[0]) { // handle: click on side button - red
+						if(func0()){
+							lstate[0]++;
+							isFuncSucceeded = true;
+							isChangeDetected = true;
+						}
+					}
+					if (wstate[2] > lstate[2]) { // click on new game
+						if(func2()){
+							lstate[2]++;
+							isFuncSucceeded = true;
+							isChangeDetected = true;
+						}
+					}
+					if (wstate[4] > lstate[4]) { // click on square
+						if(func4()){
+							lstate[4]++;
+							isFuncSucceeded = true;
+							isChangeDetected = true;
+						}
+					}
+					if (wstate[5] > lstate[5]) { // game over
+						lstate[5]++;
+						func5();
+						isChangeDetected = true;
+						mylog("5");
+					}
+				}
+			}
+		} catch (e) {
+			mylog(e);
+		}
+		mylog("leaving render info.");
+	}
+
+	function compareStates(wst, lst) {
+		var len = wst.length;
+		for ( var i = 0; i < len; i++) {
+			if (wst[i] > lst[i])
+				return false;
+		}
+		return true;
+	}
+
+	function func0() {
+		mylog("entering func0: ");
+		mylog(wave.getState());
+		var sideColor = "none";
+		var playerName = "Anon " + sideColor;
+		var playerThumbUrl = 'http://gadget-doc-examples.googlecode.com/svn/trunk/images/unknown.gif';
+		var sourceId = "anon@" + sideColor;
+		try {
+			var data = null;
+			var key = lstate[0] + "#sideClicked";
+			var value = wave.getState().get(key);
+			if(value == null){
+				lstate[0]++;
+				key = lstate[0] + "#sideClicked";
+				value = wave.getState().get(key);
+			}
+			mylog("key: " + key + ", value: " + value);
+			if (value != null) {
+				data = value.split("$$");
+			}
+
+			if (data != null) {
+				sideColor = data[3];
+				playerName = data[1];
+				playerThumbUrl = data[2];
+				sourceId = data[0];
+			} else {
+				return false;
+			}
+		} catch (e) {
+			mylog("error in func0: " + e);
+		}
+		ugolkiApp.receivePlayerInfo(sideColor, playerName, sourceId); // let applet know who plays 
+		updatePlayerIcon(sideColor, playerName, playerThumbUrl);
+		mylog("exiting func0: " + sideColor)
+		return true;
+	}
+
+	function func2() {
+		mylog("entering func2");
+		var key = lstate[2] + "#newGameInitiator";
+		$("#redJoin").attr("disabled", true);
+		$("#blackJoin").attr("disabled", true);
+		var sourceId = wave.getState().get(key);
+		if(sourceId != wave.getViewer().getId()){ // only in case it's other view
+			sendMsgDoClickNewGame(sourceId); // let applet know
+		}
+		mylog("exiting func2");
+		if(sourceId != null){
+			return true;
+		}
+		return false;
+		
+	}
+
+	/**
+	*send event to applet
+	*/
+	function sendMsgDoClickNewGame(sourceId) {
+		ugolkiApp.recieveClickNewGame(sourceId);
+		mylog("sent click new game.");
+	}
+
+	function func4() {
+		// see if click event was submitted
+		mylog("entering func4");
+		var clickDataStr = wave.getState().get(lstate[4] + "#click");
+		if (clickDataStr!= null) {
+			var clickData = clickDataStr.split("$$");
+			mylog("click data: " + clickData);
+			var sourceId = clickData[2];
+			if(sourceId != wave.getViewer().getId()){ // only in case it's other view
+				sendMsgDoClick(clickData[0], clickData[1], clickData[2]); // let applet know
+			}
+			mylog("exiting func4");
+			return true;
+		} else {
+			mylog("func4: click is null!!!");
+			return false;
+		}
+		
+	}
+
+	function func5() {
+		commonInit();
+	}
+
+	function init() {
+		mylog("Entering script! - init");
+		commonInit();
+		lstate = createNewState();
+		if (wave && wave.isInWaveContainer()) {
+			wave.setStateCallback(renderInfo);
+
+			//
+			//wave.getState().submitValue({"isGameStarted": "false"});
+			//wave.setParticipantCallback(renderInfo);
+		}
+		mylog("exited init");
+	}
+
+	function registerInit() {
+		try {
+			gadgets.util.registerOnLoadHandler(init);
+			mylog("initializing gadget succeeded!!");
+		} catch (e2) {
+			mylog("initializing gadget failed: " + e2);
+		}
+	}
+	function sendMsgDoClick(row, col, sourceId) {
+		if (wave && wave.isInWaveContainer()
+				&& sourceId != wave.getViewer().getId()) { // no point to send click to it's source
+			ugolkiApp.recieveClick(row, col, sourceId);
+			mylog("sent click: " + row, col, sourceId);
+		} else {
+			// in case we are out of wave - then send anyway
+			ugolkiApp.recieveClick(row, col, sourceId);
+		}
+
+	}
+
+	function recieveMsgDoClick(row, col, sourceId) {
+		mylog("entering recieveMsgDoClick: " + row + "," + col + " : " + sourceId);
+		try {
+			//wave.getState().submitValue("isGameStarted", "true");
+			var wstate = getWstate();
+			var obj = {};
+			obj[wstate[4] + "#click"] = row + "$$" + col + "$$" + sourceId;
+			wstate[4]++;
+			obj["eventState"] = obj2str(wstate);
+			wave.getState().submitDelta(obj);
+			mylog("exiting recieveMsgDoClick: " );
+			return true;
+		} catch (e) {
+			mylog(e);
+		}
+		return false;
+	}
+
+	
+	function recieveMsgDoClickNewGame(sourceId) {
+		mylog("entering recieveMsgDoClickNewGame: " + sourceId);
+		//disable buttons
+		try {
+			//wave.getState().submitValue("isGameStarted", "true");
+			var obj = {};
+			var wstate = getWstate();
+			obj[wstate[2] + "#newGameInitiator"] = sourceId;
+			wstate[2]++;
+			obj["eventState"] = obj2str(wstate);
+			wave.getState().submitDelta(obj);
+		} catch (e) {
+			// in case there's no wave, then func2 will not be invoked
+			$("#redJoin").attr("disabled", true);
+			$("#blackJoin").attr("disabled", true);
+			mylog(e);
+		}
+		mylog("exiting recieveMsgDoClickNewGame: ");
+	}
+</script>
+
+<table>
+<tr height="100px">
+	<td align="left" width="30%">
+		<div id="welcomeDiv" style="font-size: 105.5%;">
+	Ugolki is a board game originating from Russia. It is a sort of simplified version of Chinese checkers. <br>
+	The beauty of this game that it has very simple rules but allows enough depth for strategical challenge.<br>
+	 It's also easy going and usually takes only about 5 minutes per game.<br>
+I decided to create one and put on the web - for free - so you can play it versus computer player or versus human player that is sharing your computer. I am currently work also on <a href="http://wave.google.com/about.html">google wave</a> version - it will also allow human vs. human mode on remote computers .<br>
+The game interface is intuitive, when you click on a piece, all possible moves are highlighted.
+In short - the rules are like this :
+<ul>
+<li>Red player moves first.</li>
+<li>A move can be to adjacent square (top, bottom, left,right) or a jump over piece of either player.</li>
+<li>Whoever moves all his pieces to the starting positing of the opposite player(i.e. to the opposite corner - hence the Russian word: Ugolki - Corners) wins!</li>
+</ul>
+
+Have Fun!<br>
+Visit Ugolki blog  at  <a href="http://ugolki.blogspot.com/"><b>Blogger</b> </a> for more infomation and discussion.<br>
+Blog me  if you encounter a bug.<br>
+Also if you would like additional features, like: <br>
+<ul>
+<li>score tracking</li>
+<li>more sophisticated computer player AI</li>
+<li>play regular checkers</li>
+<li>anything else?</li>
+</ul>   
+</div>
+	
+<td width="1%"></td>
+<td>
+
+
+<div id="contentDiv" style="height: 445px; width: 695px; background: blue">
+	<div id="topDiv">
+	<table>
+		<tr id="trId">
+			<td >
+				<script src="http://www.java.com/js/deployJava.js"></script> 
+				<script> 
+			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://ugolki.appspot.com/Ugolki56.jar', width:480, height:440} ; 
+			        //var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'Ugolki38.jar', width:480, height:440} ;
+			        //var parameters = {jnlp_href: 'ugolki-applet.jnlp'} ; 
+			        var parameters = {} ;     
+			        deployJava.runApplet(attributes, parameters, '1.5');       
+			    </script>
+		    </td>
+			<td class="leftWidth" style="background: gray;">
+			<table>
+				<tr >
+					<td  height="230" style="background: white;">
+						<div id="infoDiv">
+						<table>
+							<tr >
+								<td align="center"><img id="redThumbnail"
+									src="http://ugolki.appspot.com/img/red_robot.jpeg" width="50"
+									height="50" /><br />
+								<span width="50" height="50" id="redName" style="color: red">Computer-Red</span> <br>
+
+								<button id="redJoin" onclick="buttonClicked('red')"
+									style="color: red; width: 80">click to play as RED</button>
+
+								</td>
+								<td align="center"><img id="blackThumbnail"
+									src="http://ugolki.appspot.com/img/black_robot.jpeg" width="50"
+									height="50" /><br />
+								<span width="50" height="50" id="blackName" style="color: black">Computer-Black</span><br />
+
+								<button id="blackJoin" onclick="buttonClicked('black')"
+									style="color: black; width: 80">click to play as BLACK
+								</button>
+								</td>
+							</tr>
+							<tr>
+								<td align="center" colspan="2">Or just click "New Game" and watch how AI players challenge each other </td>
+							</tr>
+						</table>
+
+
+						</div></tr>
+				<tr>
+					<td width="200" height="200"  style="background: blue">
+						<!--  <img id="ad"
+						src="http://ugolki.appspot.com/img/Cocacola.jpg"
+						class="leftWidth leftHeight" /> --> <script type="text/javascript"><!--
+google_ad_client = "pub-3589749845269196";
+/* 200x200, נוצר 24/03/10 */
+google_ad_slot = "6856321785";
+google_ad_width = 200;
+google_ad_height = 200;
+//-->
+</script> <script type="text/javascript"
+					src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+						
+						
+					</td>
+				</tr>
+			</table>
+			</td>
+		</tr>
+	</table>
+	</div>
+<div id="debugDiv" style="color: red; width : 480; height : 50; background: yellow; overflow:auto; display: none ">	</div>
+
+</div>
+
+</td>
+<td width="200px"></td>
+</tr>
+</table>
+<script type="text/javascript">
+registerInit();
+</script>
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-13269470-1");
+pageTracker._setDomainName(".appspot.com");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+
+
+</body>
+</html>
