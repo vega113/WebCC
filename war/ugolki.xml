@@ -14,15 +14,10 @@
 <title>
 Ugolki
 </title>
-<link type="text/css" href="http://checkersboty.appspot.com/js/themes/base/ui.all.css" rel="stylesheet" />
 <link type="text/css" href="http://checkersboty.appspot.com/js/demos/demos.css" rel="stylesheet" />
 <body >
 
 <script type="text/javascript"src="http://code.jquery.com/jquery-1.4.2.js"></script> 
-<script type="text/javascript" src="http://checkersboty.appspot.com/js/jquery.jqDock.js"></script>
- <script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.core.js"></script> 
- <script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.drop.js"></script> 
-
 
 <script type="text/javascript">
 
@@ -30,10 +25,10 @@ var SIDE_RED = 'red';
 var SIDE_BLACK = 'black';
 var DEFAULT_BLACK_NAME = "Computer-Black";
 var DEFAULT_RED_NAME = "Computer-Red";
-var DEFAULT_BLACK_IMG = "http://checkersboty.appspot.com/img/black_robot.jpeg";
-var DEFAULT_RED_IMG = "http://checkersboty.appspot.com/img/red_robot.jpeg";
+var DEFAULT_BLACK_IMG = "http://checkersboty.appspot.com/img/black_robot.png";
+var DEFAULT_RED_IMG = "http://checkersboty.appspot.com/img/red_robot.png";
 var prefs = null;
-var debugMode = true;
+var debugMode = false;
 var defaultOwner = "unidentified";
 var lstate = new Array(0,0,0,0,0,0);
 
@@ -59,8 +54,8 @@ var lstate = new Array(0,0,0,0,0,0);
 			commonInit();
 			//registerInit();
 			try {
-				prefs = new gadgets.Prefs();
-				//debugMode = prefs.getBool("debugMode") ? true : false;
+				var prefs = new gadgets.Prefs();
+				debugMode = prefs.getBool("debugMode");
 				mylog("debug mode: " + prefs.getBool("debugMode"));
 			} catch (e) {
 				mylog("blah" + e + "..");
@@ -166,20 +161,18 @@ var lstate = new Array(0,0,0,0,0,0);
 	}
 
 	function recieveGameOver(sourceId, looserId, winnerId) {
-		mylog("start: recieveGameOver");
+		mylog("entering recieveGameOver");
 		try {
-			$("#redJoin").attr("disabled", false);
-			$("#blackJoin").attr("disabled", false);
 			if (wave != null) {
 				viewerId = wave.getViewer().getId();
 				var wstate = getWstate();
-				wstate[5]++;
 				var obj = {};
+				var gameOverInfo = sourceId + "$$" + looserId + "$$" + winnerId;
+				obj[wstate[5] + "#gameOverInfo"] = gameOverInfo;
+				wstate[5]++;
 				var stateStr = obj2str(wstate);
 				obj["eventState"] = stateStr;
-				var gameOverInfo = sourceId + "$$" + looserId + "$$" + winnerId;
-				obj["gameOverInfo"] = gameOverInfo;
-				wave.getState().submi
+				wave.getState().submitDelta(obj);
 				//need to signal applets that viewer now plays on "side"
 
 			} else {
@@ -188,15 +181,22 @@ var lstate = new Array(0,0,0,0,0,0);
 		} catch (e1) {
 			mylog(e1);
 		}
+		mylog("exiting recieveGameOver");
 	}
 
 	function mylog(str) {
 		if (debugMode == true) {
 			var newDate = new Date();
 			var strOld = "";
-			if ($("#debugDiv").html() != null)
+			if ($("#debugDiv").html() != null){
 				strOld = $("#debugDiv").html();
-			$("#debugDiv").html(str + "<br>" + newDate.getTime() + " : " + strOld);
+			try{
+			$("#debugDiv").html(newDate.getHours() + ":" + newDate.getMinutes() + ":" + newDate.getSeconds() + " : html : " + str + "<br>"  + strOld);
+				//$("#debugDiv").html(newDate.getHours() + ":" + newDate.getMinutes() + ":" + newDate.getSeconds() + " : html : " + str);
+			}catch(e1){
+				$("#debugDiv").html(str + "<br>" + "nodate" + " : " + strOld);
+			}
+			}
 			try {
 				wave.log(str);
 			} catch (e) {
@@ -215,6 +215,7 @@ var lstate = new Array(0,0,0,0,0,0);
 				var ownerViewerId = wave.getViewer().getId();
 				ugolkiApp.recieveWaveId(ownerViewerId);//let applet know who owns it
 				window.firstTime = false;
+				getWstate();
 			} catch (e) {
 				mylog(e);
 			}
@@ -223,43 +224,49 @@ var lstate = new Array(0,0,0,0,0,0);
 		try {
 			var wstate = null;
 			if (wave.getState() != null) {
-				wstate = getWstate();
-				mylog("wstate: " + wstate);
-				mylog("lstate: " + lstate);
-				var isChangeDetected = true;
-				var isFuncSucceeded = false;
 				var counter = 0;
-				while (isChangeDetected) {
-					mylog("counter: " + counter);
+				while ( !isStatesFullySincd()) {
+					var wstate = getWstate();
+					mylog("while#: " + counter);
 					counter++;
 					isChangeDetected = false;
 
 					if (wstate[0] > lstate[0]) { // handle: click on side button - red
 						if(func0()){
-							lstate[0]++;
-							isFuncSucceeded = true;
-							isChangeDetected = true;
+							if(lstate[0] <= wstate[0]){
+								++lstate[0];
+								continue;
+							}
 						}
+						continue;
 					}
 					if (wstate[2] > lstate[2]) { // click on new game
 						if(func2()){
-							lstate[2]++;
-							isFuncSucceeded = true;
-							isChangeDetected = true;
+							if(lstate[2] <= wstate[2]){
+								++lstate[2];
+								continue;
+							}
 						}
+						continue;
 					}
 					if (wstate[4] > lstate[4]) { // click on square
 						if(func4()){
-							lstate[4]++;
-							isFuncSucceeded = true;
-							isChangeDetected = true;
+							if(lstate[4] <= wstate[4]){
+								++lstate[4];
+								continue;
+							}
+							
 						}
+						continue;
 					}
 					if (wstate[5] > lstate[5]) { // game over
-						lstate[5]++;
-						func5();
-						isChangeDetected = true;
-						mylog("5");
+						if(func5()){
+							if(lstate[5] <= wstate[5]){
+								++lstate[5];
+								continue;
+							}
+						}
+						continue;
 					}
 				}
 			}
@@ -269,13 +276,22 @@ var lstate = new Array(0,0,0,0,0,0);
 		mylog("leaving render info.");
 	}
 
-	function compareStates(wst, lst) {
-		var len = wst.length;
-		for ( var i = 0; i < len; i++) {
-			if (wst[i] > lst[i])
-				return false;
+	function isStatesFullySincd() {
+		var wstate = getWstate();
+		mylog("entering isStatesFullySincd: wstate: " + wstate + ", lstate: " + lstate );
+		try{
+			var len = wstate.length;
+			for ( var i = 0; i < len; i++) {
+				if (wstate[i] > lstate[i]){
+					mylog("exiting isStatesFullySincd: states are not syncd yet!");
+					return false;
+				}
+			}
+			mylog("exiting isStatesFullySincd: states are syncd.");
+			return true;
+		}catch(e){
+			mylog(e)
 		}
-		return true;
 	}
 
 	function func0() {
@@ -344,13 +360,14 @@ var lstate = new Array(0,0,0,0,0,0);
 	function func4() {
 		// see if click event was submitted
 		mylog("entering func4");
-		var clickDataStr = wave.getState().get(lstate[4] + "#click");
+		var clickDataStr = getClickData(lstate[4]);
 		if (clickDataStr!= null) {
+			var wstate = getWstate();
 			var clickData = clickDataStr.split("$$");
 			mylog("click data: " + clickData);
 			var sourceId = clickData[2];
 			if(sourceId != wave.getViewer().getId()){ // only in case it's other view
-				sendMsgDoClick(clickData[0], clickData[1], clickData[2]); // let applet know
+				sendMsgDoClick(clickData[0], clickData[1], clickData[2],clickData[3]); // let applet know
 			}
 			mylog("exiting func4");
 			return true;
@@ -361,8 +378,25 @@ var lstate = new Array(0,0,0,0,0,0);
 		
 	}
 
+	function getClickData(clickNum){
+		return wave.getState().get(clickNum + "#click");
+	}
+
 	function func5() {
-		commonInit();
+		mylog("entering func5");
+		try{
+			var dataArr = wave.getState().get(lstate[5] + "#gameOverInfo").split("$$");
+			var looserWaveId =  dataArr[1];
+			var winnerWaveId = dataArr[2];
+			ugolkiApp.receiveGameOver(looserWaveId,winnerWaveId);
+			mylog("exiting func5");
+			commonInit();
+			return true;
+		}catch(e){
+			mylog("exiting with error func5:" + e);
+		}
+		
+		return false;
 	}
 
 	function init() {
@@ -370,8 +404,17 @@ var lstate = new Array(0,0,0,0,0,0);
 		commonInit();
 		lstate = createNewState();
 		if (wave && wave.isInWaveContainer()) {
-			wave.setStateCallback(renderInfo);
-
+			try{
+				wave.setStateCallback(renderInfo);
+				var prefs = new gadgets.Prefs();
+				var debugMode = prefs.getBool("debugMode");
+				debugMode = prefs.getBool("debugMode");
+				setAppletDebugMode(debugMode);
+				mylog("debug mode: " + prefs.getBool("debugMode"));
+			}catch(e){
+				debugMode = true;
+				mylog("error in int: " + e);
+			}
 			//
 			//wave.getState().submitValue({"isGameStarted": "false"});
 			//wave.setParticipantCallback(renderInfo);
@@ -387,11 +430,11 @@ var lstate = new Array(0,0,0,0,0,0);
 			mylog("initializing gadget failed: " + e2);
 		}
 	}
-	function sendMsgDoClick(row, col, sourceId) {
+	function sendMsgDoClick(row, col, sourceId, clickType) {
 		if (wave && wave.isInWaveContainer()
 				&& sourceId != wave.getViewer().getId()) { // no point to send click to it's source
-			ugolkiApp.recieveClick(row, col, sourceId);
-			mylog("sent click: " + row, col, sourceId);
+			ugolkiApp.recieveClick(row, col, sourceId,clickType);
+			mylog("sent click: " + row + "," +  col + "," + ","  + sourceId + "," + clickType);
 		} else {
 			// in case we are out of wave - then send anyway
 			ugolkiApp.recieveClick(row, col, sourceId);
@@ -399,13 +442,13 @@ var lstate = new Array(0,0,0,0,0,0);
 
 	}
 
-	function recieveMsgDoClick(row, col, sourceId) {
-		mylog("entering recieveMsgDoClick: " + row + "," + col + " : " + sourceId);
+	function recieveMsgDoClick(row, col, sourceId, clickType) {
+		mylog("entering recieveMsgDoClick: " + row + "," + col + " : " + sourceId + " : " + clickType);
 		try {
 			//wave.getState().submitValue("isGameStarted", "true");
 			var wstate = getWstate();
 			var obj = {};
-			obj[wstate[4] + "#click"] = row + "$$" + col + "$$" + sourceId;
+			obj[wstate[4] + "#click"] = row + "$$" + col + "$$" + sourceId + "$$" + clickType;
 			wstate[4]++;
 			obj["eventState"] = obj2str(wstate);
 			wave.getState().submitDelta(obj);
@@ -437,66 +480,76 @@ var lstate = new Array(0,0,0,0,0,0);
 		}
 		mylog("exiting recieveMsgDoClickNewGame: ");
 	}
+
+	function setAppletDebugMode(debugMode){
+		ugolkiApp.setDebugMode(debugMode);
+	}
+	//checkersboty.appspot.com
+	//localhost:8888
 </script>
 
 
 
 
-<div id="contentDiv" style="height: 445px; width: 695px; background: blue">
+<div id="contentDiv" style="height: 445px; width: 695px; background: gray">
 	<div id="topDiv">
 	<table>
 		<tr id="trId">
 			<td >
 				<script src="http://www.java.com/js/deployJava.js"></script> 
 				<script> 
-			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://checkersboty.appspot.com/Ugolki56.jar', width:480, height:440} ; 
+			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://checkersboty.appspot.com/Ugolki131.jar', width:480, height:437} ; 
 			        //var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'Ugolki38.jar', width:480, height:440} ;
 			        //var parameters = {jnlp_href: 'ugolki-applet.jnlp'} ; 
 			        var parameters = {} ;     
 			        deployJava.runApplet(attributes, parameters, '1.5');       
 			    </script>
 		    </td>
-			<td class="leftWidth" style="background: gray;">
+			<td style="background: gray;">
 			<table>
-				<tr >
-					<td  height="230" style="background: white;">
+				<tr height="235">
+					<td  style="background-color: DCDCDC;">
 						<div id="infoDiv">
 						<table>
 							<tr >
 								<td align="center"><img id="redThumbnail"
-									src="http://checkersboty.appspot.com/img/red_robot.jpeg" width="50"
+									src="http://checkersboty.appspot.com/img/red_robot.png" width="50"
 									height="50" /><br />
-								<span width="50" height="50" id="redName" style="color: red">Computer-Red</span> <br>
-
-								<button id="redJoin" onclick="buttonClicked('red')"
-									style="color: red; width: 80">click to play as RED</button>
-
 								</td>
 								<td align="center"><img id="blackThumbnail"
-									src="http://checkersboty.appspot.com/img/black_robot.jpeg" width="50"
+									src="http://checkersboty.appspot.com/img/black_robot.png" width="50"
 									height="50" /><br />
-								<span width="50" height="50" id="blackName" style="color: black">Computer-Black</span><br />
-
-								<button id="blackJoin" onclick="buttonClicked('black')"
-									style="color: black; width: 80">click to play as BLACK
-								</button>
+								
+								</td>
+							</tr>
+							<tr>
+								<td align="center">
+									<span  id="redName" style="color: red" >Computer-Red</span> <br>
+								</td>
+								<td align="center">
+									<span  id="blackName" style="color: black">Computer-Black</span><br />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<button id="redJoin" onclick="buttonClicked('red')"
+									style="color: red; width: 80">click to play as RED</button>
+								</td>
+								<td>
+									<button id="blackJoin" onclick="buttonClicked('black')"
+										style="color: black; width: 80">click to play as BLACK
+									</button>
 								</td>
 							</tr>
 							<tr>
 								<td align="center" colspan="2">Or just click "New Game" and watch how AI players challenge each other </td>
 							</tr>
 						</table>
-
-
-						</div></tr>
-				<tr>
-					<td width="200" height="200"  style="background: blue">
-						<!--  <img id="ad"
-						src="http://checkersboty.appspot.com/img/Cocacola.jpg"
-						class="leftWidth leftHeight" /> -->
-</script>
-						
-						
+						</div>
+						</td>
+				</tr>
+				<tr height="200">
+					<td   style="background-color: DCDCDC;">
 					</td>
 				</tr>
 			</table>
@@ -504,7 +557,7 @@ var lstate = new Array(0,0,0,0,0,0);
 		</tr>
 	</table>
 	</div>
-<div id="debugDiv" style="color: red; width : 480; height : 150; background: yellow; overflow:auto; ">	</div>
+<div id="debugDiv" style="color: black; width : 695; height : 120; background: gray; overflow:hidden; ">	</div>
 
 </div>
 <script type="text/javascript">
@@ -526,6 +579,10 @@ pageTracker._trackPageview();
 
 </body>
 </html>
+
+<!--   <script type="text/javascript" src="http://checkersboty.appspot.com/js/jquery.jqDock.js"></script> -->
+ <!--   <script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.core.js"></script> --> 
+ <!--  script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.drop.js"></script> -->
 
     ]]>
 	</Content>
