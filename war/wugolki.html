@@ -16,7 +16,7 @@ var DEFAULT_RED_NAME = "Computer-Red";
 var DEFAULT_BLACK_IMG = "http://checkersboty.appspot.com/img/black_robot.png";
 var DEFAULT_RED_IMG = "http://checkersboty.appspot.com/img/red_robot.png";
 var prefs = null;
-var debugMode = false;
+var debugMode = true;
 var defaultOwner = "unidentified";
 var lstate = new Array(0,0,0,0,0,0);
 
@@ -195,10 +195,6 @@ var lstate = new Array(0,0,0,0,0,0);
 	function renderInfo() {
 		mylog("In render info");
 		if (window.firstTime == null || window.firstTime == true) {
-			mylog("First time in window - total reload");
-			//lstate = getWstate();
-			//totalReload();
-			//return;
 			try {
 				var ownerViewerId = wave.getViewer().getId();
 				ugolkiApp.recieveWaveId(ownerViewerId);//let applet know who owns it
@@ -212,13 +208,37 @@ var lstate = new Array(0,0,0,0,0,0);
 		try {
 			var wstate = null;
 			if (wave.getState() != null) {
+				wstate = getWstate();
+				//try detect out of sync - i.e. wave reload
+				try{
+					if(lstate[1] > 0 ){
+						return;
+					}
+					mylog("for abort: " + "wstate:" + wstate + ", lstate: " + lstate);
+					if(wstate[2] > 0 && lstate[2] == 0 && wstate[4] > 1 && lstate[4] == 0 ){
+						//out of sync
+						//need to reload(DESCOPED) or abort
+						//let's abort the game
+						var OUT_OF_SYNC_MSG = "PLayer out of sync!";
+						abortGame(OUT_OF_SYNC_MSG,wave.getViewer().getId(),wave.getViewer().getDisplayName());
+					}
+				}catch(es){
+					mylog(es);
+					return;
+				}
+				
 				var counter = 0;
-				while ( !isStatesFullySincd()) {
-					var wstate = getWstate();
+				while ( !isStatesFullySincd() && lstate[1] == 0) { // lstate[1] > 0 --> game is aborted
+					wstate = getWstate();
 					mylog("while#: " + counter);
 					counter++;
 					isChangeDetected = false;
 
+					if(wstate[1] > 0 ){
+						funcMinusOne();
+						return;
+					}
+					
 					if (wstate[0] > lstate[0]) { // handle: click on side button - red
 						if(func0()){
 							if(lstate[0] <= wstate[0]){
@@ -378,7 +398,7 @@ var lstate = new Array(0,0,0,0,0,0);
 			var winnerWaveId = dataArr[2];
 			ugolkiApp.receiveGameOver(looserWaveId,winnerWaveId);
 			mylog("exiting func5");
-			commonInit();
+			//commonInit(); //DESCOPED
 			return true;
 		}catch(e){
 			mylog("exiting with error func5:" + e);
@@ -472,6 +492,41 @@ var lstate = new Array(0,0,0,0,0,0);
 	function setAppletDebugMode(debugMode){
 		ugolkiApp.setDebugMode(debugMode);
 	}
+
+	function abortGame(msg,playerId,playerName){
+		mylog("entering abortGame: ");
+		try{
+			var wstate = getWstate();
+			var abortInfo = msg + "$$" + playerId + "$$" + playerName;
+			wstate[1]++;
+			var obj = {};
+			obj["eventState"] = obj2str(wstate);
+			obj["abortInfo"] = abortInfo;
+			wave.getState().submitDelta(obj);
+		}catch(e){
+			mylog(e);
+		}
+		mylog("exiting abortGame: ")
+	}
+
+	function funcMinusOne(){
+		mylog("entering funcMinusOne: ")
+		var wstate = getWstate();
+		try{
+			if(wstate != null){
+				$("#redJoin").attr("disabled", true);
+				$("#blackJoin").attr("disabled", true);
+				var abortParams = wave.getState().get("abortInfo").split("$$");
+				lstate[1]++;
+				ugolkiApp.receiveGameOver(abortParams[1],abortParams[1]);
+				var msg = "Game aborted by " + abortParams[2] + " due to the following reason: " + abortParams[0];
+				ugolkiApp.abortGame(abortParams[1],msg);
+			}
+		}catch(e3){
+			mylog(e3);
+		}
+		mylog("exiting funcMinusOne: ")
+	}
 	//checkersboty.appspot.com
 	//localhost:8888
 </script>
@@ -486,11 +541,11 @@ var lstate = new Array(0,0,0,0,0,0);
 			<td >
 				<script src="http://www.java.com/js/deployJava.js"></script> 
 				<script> 
-			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://checkersboty.appspot.com/Ugolki131.jar', width:480, height:437} ; 
+			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://checkersboty.appspot.com/Ugolki137.jar', width:480, height:437} ; 
 			        //var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'Ugolki38.jar', width:480, height:440} ;
 			        //var parameters = {jnlp_href: 'ugolki-applet.jnlp'} ; 
-			        var parameters = {} ;     
-			        deployJava.runApplet(attributes, parameters, '1.5');       
+			        var parameters = {} ; 
+			        deployJava.runApplet(attributes, parameters, '1.6');       
 			    </script>
 		    </td>
 			<td style="background: gray;">
@@ -545,7 +600,7 @@ var lstate = new Array(0,0,0,0,0,0);
 		</tr>
 	</table>
 	</div>
-<div id="debugDiv" style="color: black; width : 695; height : 120; background: gray; overflow:hidden; ">	</div>
+<div id="debugDiv" style="color: black; width : 695; height : 120; background: gray; overflow:auto; ">	</div>
 
 </div>
 <script type="text/javascript">
