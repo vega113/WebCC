@@ -1,0 +1,10 @@
+<extension 
+    name="Ugolki Board Game"
+    thumbnailUrl="http://ugolki.appspot.com/favicon.jpeg"
+    description="Ugolki Board Game - is simple with  intuitive interface, however,it provides enough depth - so challenge your friends!"> 
+  <author name="VegaLabs Inc."/> 
+  <menuHook location="toolbar" text="Add Ugolki Board Game"
+      iconUrl="http://ugolki.appspot.com/favicon.jpeg"> 
+    <insertGadget url="http://ugolki.appspot.com/ugolki.xml"/> 
+  </menuHook> 
+</extension> 
