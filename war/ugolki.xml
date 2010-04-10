@@ -1,7 +1,8 @@
-<?xml  version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Module>
-	<ModulePrefs title="Ugolki" width="720" height="570">
+	<ModulePrefs title="Ugolki" width="720" height="570" title_url="http://ugolki.blogspot.com" author="VegaLabs Inc." author_email="ugolkigame@gmail.com" thumbnail="http://ugolki.appspot.com/favicon.jpeg" description="">
 		<Require feature="wave" /> 
+		
 	</ModulePrefs>
 	<UserPref name="debugMode"
                       display_name="Debug Mode"
@@ -14,8 +15,8 @@
 <title>
 Ugolki
 </title>
-<link type="text/css" href="http://checkersboty.appspot.com/js/demos/demos.css" rel="stylesheet" />
-<body >
+<link type="text/css" href="http://ugolki.appspot.com/js/demos/demos.css" rel="stylesheet" />
+<body style="background-color: 	#B8B8B8;  " >
 
 <script type="text/javascript"src="http://code.jquery.com/jquery-1.4.2.js"></script> 
 
@@ -25,8 +26,8 @@ var SIDE_RED = 'red';
 var SIDE_BLACK = 'black';
 var DEFAULT_BLACK_NAME = "Computer-Black";
 var DEFAULT_RED_NAME = "Computer-Red";
-var DEFAULT_BLACK_IMG = "http://checkersboty.appspot.com/img/black_robot.png";
-var DEFAULT_RED_IMG = "http://checkersboty.appspot.com/img/red_robot.png";
+var DEFAULT_BLACK_IMG = "http://ugolki.appspot.com/img/black_robot.png";
+var DEFAULT_RED_IMG = "http://ugolki.appspot.com/img/red_robot.png";
 var prefs = null;
 var debugMode = true;
 var defaultOwner = "unidentified";
@@ -67,16 +68,18 @@ var lstate = new Array(0,0,0,0,0,0);
 	});
 
 	function commonInit(){
+		mylog("entering commonInit");
 		$("#redJoin").attr("disabled", false);
 		$("#blackJoin").attr("disabled", false);
 		updatePlayerIcon(SIDE_BLACK, DEFAULT_BLACK_NAME, DEFAULT_BLACK_IMG);
 		updatePlayerIcon(SIDE_RED, DEFAULT_RED_NAME, DEFAULT_RED_IMG);
+		mylog("exiting commonInit");
 	}
 
 	function buttonClicked(side) {
 		mylog("entering button clicked: " + side);
 		var viewerId = "anon@" + side;
-		var viewerName = 'Anon ' + side;
+		var viewerName = 'Player-' + side;
 		try {
 			if (wave != null) {
 				var wstate = getWstate();
@@ -110,6 +113,9 @@ var lstate = new Array(0,0,0,0,0,0);
 		} catch (e1) {
 			mylog(e1);
 			ugolkiApp.receivePlayerInfo(side, viewerName, viewerId);
+			viewerName = "Player - " + side;
+			thumbNailUrl = "http://ugolki.appspot.com/img/" + side + "_robot.png"
+			updatePlayerIcon(side, viewerName, thumbNailUrl)
 		}
 		mylog("exiting button clicked: " + side);
 	}
@@ -177,9 +183,11 @@ var lstate = new Array(0,0,0,0,0,0);
 
 			} else {
 				mylog("wave is null: recieveGameOver");
+				localGameOver();
 			}
 		} catch (e1) {
 			mylog(e1);
+			localGameOver();
 		}
 		mylog("exiting recieveGameOver");
 	}
@@ -318,7 +326,7 @@ var lstate = new Array(0,0,0,0,0,0);
 		mylog("entering func0: ");
 		mylog(wave.getState());
 		var sideColor = "none";
-		var playerName = "Anon " + sideColor;
+		var playerName = "Player- " + sideColor;
 		var playerThumbUrl = 'http://gadget-doc-examples.googlecode.com/svn/trunk/images/unknown.gif';
 		var sourceId = "anon@" + sideColor;
 		try {
@@ -357,6 +365,7 @@ var lstate = new Array(0,0,0,0,0,0);
 		var key = lstate[2] + "#newGameInitiator";
 		$("#redJoin").attr("disabled", true);
 		$("#blackJoin").attr("disabled", true);
+		$("#startGameId").attr("disabled", true);
 		var sourceId = wave.getState().get(key);
 		if(sourceId != wave.getViewer().getId()){ // only in case it's other view
 			sendMsgDoClickNewGame(sourceId); // let applet know
@@ -409,6 +418,7 @@ var lstate = new Array(0,0,0,0,0,0);
 			var looserWaveId =  dataArr[1];
 			var winnerWaveId = dataArr[2];
 			ugolkiApp.receiveGameOver(looserWaveId,winnerWaveId);
+			ugolkiApp.appendMsg("Create new wave to play Ugolki again");
 			mylog("exiting func5");
 			//commonInit(); //DESCOPED
 			return true;
@@ -417,6 +427,18 @@ var lstate = new Array(0,0,0,0,0,0);
 		}
 		
 		return false;
+	}
+
+	function localGameOver(){
+		mylog("entering localGameOver");
+		try{
+			if(wave == null){
+				commonInit();
+			}
+		}catch(e){
+			commonInit();
+		}
+		mylog("exiting localGameOver");
 	}
 
 	function init() {
@@ -430,6 +452,7 @@ var lstate = new Array(0,0,0,0,0,0);
 				var debugMode = prefs.getBool("debugMode");
 				debugMode = prefs.getBool("debugMode");
 				setAppletDebugMode(debugMode);
+				document.body.style.background = "white";
 				mylog("debug mode: " + prefs.getBool("debugMode"));
 			}catch(e){
 				debugMode = true;
@@ -539,21 +562,21 @@ var lstate = new Array(0,0,0,0,0,0);
 		}
 		mylog("exiting funcMinusOne: ")
 	}
-	//checkersboty.appspot.com
-	//localhost:8888
+	//ugolki.appspot.com
+	//ugolki.appspot.com
 </script>
 
 
 
 
-<div id="contentDiv" style="height: 445px; width: 695px; background: gray">
+<div id="contentDiv" style="height: 448px; width: 698px; background: gray" align="center">
 	<div id="topDiv">
 	<table>
 		<tr id="trId">
 			<td >
 				<script src="http://www.java.com/js/deployJava.js"></script> 
 				<script> 
-			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://checkersboty.appspot.com/Ugolki137.jar', width:480, height:437} ; 
+			        var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'http://ugolki.appspot.com/Ugolki.jar', width:380, height:437} ; 
 			        //var attributes = {id:'ugolkiApp', code:'mystuff.checkers.ui.ugolki.MainVisualUgolki', archive:'Ugolki38.jar', width:480, height:440} ;
 			        //var parameters = {jnlp_href: 'ugolki-applet.jnlp'} ; 
 			        var parameters = {} ; 
@@ -562,49 +585,81 @@ var lstate = new Array(0,0,0,0,0,0);
 		    </td>
 			<td style="background: gray;">
 			<table>
-				<tr height="235">
+				<tr height="181">
 					<td  style="background-color: DCDCDC;">
-						<div id="infoDiv">
+						<div id="infoDiv" style=" width: 300px; ">
 						<table>
 							<tr >
 								<td align="center"><img id="redThumbnail"
-									src="http://checkersboty.appspot.com/img/red_robot.png" width="50"
-									height="50" /><br />
+									src="http://ugolki.appspot.com/img/red_robot.png" width="50"
+									height="50px" alt="Red player icon" title="Red player icon"/><br />
 								</td>
 								<td align="center"><img id="blackThumbnail"
-									src="http://checkersboty.appspot.com/img/black_robot.png" width="50"
-									height="50" /><br />
+									src="http://ugolki.appspot.com/img/black_robot.png" width="50"
+									height="50" alt="Black player icon" title="Black player icon" /><br />
 								
+								</td>
+								<td rowspan="3">
+									<table >
+										<tr  >
+											<td align="left">
+												<button id="startGameId" type="button" style=" width: 80px; height:50; font-size:15;" title="Start the game" onclick="ugolkiApp.recieveClickStart();"> Start</button> 
+											</td>
+										</tr>
+										<tr >
+											<td align="left">
+												<button id="giveupId" type="button" style=" width: 80px; height:50; font-size:15;" title="Abort and lose" onclick="ugolkiApp.recieveResign();" > Give Up</button> 
+											</td>
+										</tr>
+									</table>
 								</td>
 							</tr>
 							<tr>
 								<td align="center">
-									<span  id="redName" style="color: red" >Computer-Red</span> <br>
+									<span  id="redName" style=" font-size:12;" >Computer-Red</span> <br>
 								</td>
+								
 								<td align="center">
-									<span  id="blackName" style="color: black">Computer-Black</span><br />
+									<span  id="blackName" style="font-size:12;">Computer-Black</span><br />
 								</td>
 							</tr>
 							<tr>
 								<td>
-									<button id="redJoin" onclick="buttonClicked('red')"
-									style="color: red; width: 80">click to play as RED</button>
+									<button  id="redJoin" onclick="buttonClicked('red')" 
+									style="color: red; width: 95; height: 30; font-size:15;" title="Click to play Ugolki as Red player">Red</button>
 								</td>
 								<td>
 									<button id="blackJoin" onclick="buttonClicked('black')"
-										style="color: black; width: 80">click to play as BLACK
+										style="color: black; width: 95; height: 30; font-size:15;" title="Click to play Ugolki as Black player">Black
 									</button>
 								</td>
+								
 							</tr>
 							<tr>
-								<td align="center" colspan="2">Or just click "New Game" and watch how AI players challenge each other </td>
+								<td colspan="3" id="textId" align="center">
+									
+								</td>
 							</tr>
+							
 						</table>
 						</div>
 						</td>
 				</tr>
-				<tr height="200">
-					<td   style="background-color: DCDCDC;">
+				<tr height="250">
+					<td   style="width: 300; background-color: DCDCDC;">
+						<div id="adDiv" style="padding: 0; margin: 0;">
+							<script type="text/javascript"><!--
+							google_ad_client = "pub-3589749845269196";
+							/* 300x250, נוצר 07/04/10 */
+							google_ad_slot = "7502973221";
+							google_ad_width = 300;
+							google_ad_height = 250;
+							//-->
+							</script>
+							<script type="text/javascript"
+							src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+							</script>
+						</div>
 					</td>
 				</tr>
 			</table>
@@ -612,22 +667,35 @@ var lstate = new Array(0,0,0,0,0,0);
 		</tr>
 	</table>
 	</div>
-<div id="debugDiv" style="color: black; width : 695; height : 120; background: gray; overflow:auto; ">	</div>
+<div id="debugDiv" style="color: black; width : 695; height : 120; display: none; background: gray; overflow:auto; ">	</div>
 
 </div>
 <script type="text/javascript">
 registerInit();
+var str = $("#textId").html();
+
+var discussUgolkiBlogStr = "Visit <a href='#' onclick=window.open('http://ugolki.blogspot.com')>Ugolki Blog</a> for discussion. <br>";
+var discussUgolkiWaveStr = "<a href='#' onclick=window.open('https://wave.google.com/wave/?gadget_cache=0#restored:wave:googlewave.com!w%252BTpO8a-cdb.2')> Discuss Ugolki.</a>"
+var installUgolkiStr = "<a href='#' onclick=window.open('https://wave.google.com/wave/?gadget_cache=0#restored:wave:googlewave.com!w%252BTpO8a-cdY.4')> Install Ugolki.</a>"
+var standaloneStr = "Visit <a href='#' onclick=window.open('http://ugolki.appspot.com')>Ugolki Standalone</a> version site.";
+var waveStr = "Play <a href='#' onclick=window.open('https://wave.google.com/wave/?gadget_cache=0#restored:wave:googlewave.com!w%252BTpO8a-cdY')>Google Wave</a> version of Ugolki.";
+try{
+	if(wave != null){	 
+		$("#textId").html(str + discussUgolkiWaveStr + "  " + installUgolkiStr + "<br>" + standaloneStr);
+	}
+}catch(e){
+	//no wave
+	$("#textId").html(str + discussUgolkiBlogStr + waveStr);
+}
 </script>
 
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
 </script>
-
 <script type="text/javascript">
 try {
-var pageTracker = _gat._getTracker("UA-13269470-1");
-pageTracker._setDomainName(".appspot.com");
+var pageTracker = _gat._getTracker("UA-13269470-2");
 pageTracker._trackPageview();
 } catch(err) {}</script>
 
@@ -635,9 +703,9 @@ pageTracker._trackPageview();
 </body>
 </html>
 
-<!--   <script type="text/javascript" src="http://checkersboty.appspot.com/js/jquery.jqDock.js"></script> -->
- <!--   <script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.core.js"></script> --> 
- <!--  script type="text/javascript" src="http://checkersboty.appspot.com/js/ui/effects.drop.js"></script> -->
+
+
+
 
     ]]>
 	</Content>

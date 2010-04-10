@@ -8,7 +8,7 @@
         <!-- Application Resources -->
         <j2se version="1.6+"
               href="" />
-        <jar href="Ugolki.jar" main="true" />
+        <jar href="Ugolki144.jar" main="true" />
 
     </resources>
     <applet-desc 
